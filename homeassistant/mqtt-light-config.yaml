@@ -1,0 +1,13 @@
+mqtt:
+  light:
+    - schema: json
+      name: tv_backlight
+      unique_id: "client_id"
+      state_topic: "state_topic"
+      command_topic: "state_topic/set"
+      color_mode: true
+      supported_color_modes: ["hs"]
+      effect: true
+      effect_list: ["solid","rainbow", "breathing", "fire", "pulse"]
+      qos: 0
+      enabled_by_default: false
