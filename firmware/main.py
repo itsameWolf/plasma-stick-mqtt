@@ -1,5 +1,5 @@
 # main.py -- put your code here!# boot.py -- run on boot-up
-import firmware.config as config
+import config
 import plasma
 from plasma import plasma_stick
 import time
@@ -24,7 +24,7 @@ def init_wifi():
     wlan.active(True)
     wlan.connect(config.wifi_ssid, config.wifi_password)
     strip_rgb(125,0,0)
-    time.sleep(5)
+    time.sleep(3)
     if not wlan.isconnected():
         print("Couldn't connect to WiFi, restarting...")
         for i in range(10):
@@ -103,6 +103,7 @@ def command_cb(topic,msg):
     try:
         command = json.loads(msg)
         internal_state.update(command)
+        MESSAGE_FLAG = 1
         print(internal_state)
     except ValueError:
         pass
@@ -113,6 +114,12 @@ NUM_LEDS = config.led_num
 SPEED = config.led_animation_speed
 
 UPDATES = config.led_updates
+
+MQTT_UPDATES = config.mqtt_status_update * UPDATES * 60
+
+MESSAGE_FLAG = 0
+
+mqtt_update_step_counter = 0 
 
 # WS2812 / NeoPixel™ LEDs
 led_strip = plasma.WS2812(NUM_LEDS, 0, 0, plasma_stick.DAT, color_order=plasma.COLOR_ORDER_RGB)
@@ -125,7 +132,7 @@ breathing_angle = 0.0
 pulse_offset = 0.0
 
 internal_state = {"state":"OFF",
-                  "color":{"h":0.0,"s":0.0},
+                  "color":{"h":0.0,"s":1.0},
                   "effect":"solid"
                  }
 
@@ -144,7 +151,16 @@ print("initialisation is finished")
 
 while True:
     client.check_msg()
-    client.publish(config.mqtt_state_topic,json.dumps(internal_state))
+    
+    if MESSAGE_FLAG == 1:
+        client.publish(config.mqtt_state_topic,json.dumps(internal_state))
+        MESSAGE_FLAG = 0
+
+    if mqtt_update_step_counter == MQTT_UPDATES:
+        client.publish(config.mqtt_state_topic,json.dumps(internal_state))
+        mqtt_update_step_counter = 0
+    else:
+        mqtt_update_step_counter = mqtt_update_step_counter + 1
 
     if internal_state["state"] == "ON":
         if internal_state["effect"] == "solid":

@@ -12,3 +12,5 @@ mqtt_command_topic = b'state_topic/set'
 led_num = 50
 led_animation_speed = 40
 led_updates = 60
+
+mqtt_status_update = 2 
